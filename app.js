@@ -5,13 +5,17 @@ const presets=[
  ['max','Max','Max en åt gången.','#1e474a'],
  ['gnaget','Gnagetsnus','Samma plats, varje match.','#433823'],
  ['bajen','Bajensnus','Vi ses på Söder.','#285039'],
- ['gardar','Gårdarsnus','Till min bästa matchkompis.','#253f62']
+ ['gardar','Gårdarsnus','Till min bästa matchkompis.','#253f62'],
+ ['pappa','Pappas snus','Till farsan, från gänget.','#222d44'],
+ ['mamma','Mammas snus','Till mamma på din dag.','#8b4942']
 ];
 const s={step:0,empty:false,type:'Nikotinfritt',flavor:'Mentol',strength:'',preset:1,title:'Max',line:'Max en åt gången.',gift:true,qty:1,card:'',signature:'',mode:'Mall',brief:'',upload:'',uploadName:'',done:false};
 const initial={...s};
 const names=['Design','Innehåll','Present','Översikt'];
 // Stock and lid use the same paper and ink, including when the customer changes the ink.
 const labels={
+ pappa: {paper:'#232d47',ink:'#f7dea3',foil:'#b79754'},
+ mamma: {paper:'#f5e8dc',ink:'#773f47',foil:'#b97274'},
  ror:    {paper:'#f1dfb9', ink:'#573225', foil:'#ad6940'},
  max:    {paper:'#193638', ink:'#ffe0aa', foil:'#d98c59'},
  gnaget: {paper:'#1c1b19', ink:'#f3d58a', foil:'#bd963e'},
@@ -159,7 +163,7 @@ function render(){panel.replaceChildren();$('steps').replaceChildren();names.for
  choose(['Mall','Eget foto','Beskriv motiv'],s.mode,v=>{photoVersion++;s.mode=v;sourceShown=false;view='tin';render()});
  if(s.mode==='Mall')select('Välj motiv',presets.map(p=>p[1]),presets[s.preset][1],v=>{setPreset(presets.findIndex(p=>p[1]===v));render()});
  if(s.mode==='Eget foto')photoControls();
- if(s.mode==='Beskriv motiv'){edit('Vad vill du avbilda?','brief',180);const feedback=el('p','','hint');feedback.setAttribute('role','status');const suggest=el('button','Prova ett illustrerat förslag','secondary try');suggest.onclick=()=>{const words=s.brief.toLocaleLowerCase('sv');const matches=[/rör|verktyg|jour|vvs/,/porträtt|max|foto|ansikte/,/aik|gnag|solna/,/bajen|hammarby|söder/,/gårdar|djurgård|dif/];let idx=matches.findIndex(re=>re.test(words));if(idx<0){feedback.textContent='Ingen matchning i demokollektionen. Prova exempelvis AIK, Hammarby, Djurgården, porträtt eller rörmokare.';return}setPreset(idx);render()};panel.append(suggest,feedback);hint('Demon väljer ett färdigt illustrationsförslag ur kollektionen. Beskrivningen följer med i ditt korrektur.')}
+ if(s.mode==='Beskriv motiv'){edit('Vad vill du avbilda?','brief',180);const feedback=el('p','','hint');feedback.setAttribute('role','status');const suggest=el('button','Prova ett illustrerat förslag','secondary try');suggest.onclick=()=>{const words=s.brief.toLocaleLowerCase('sv');const matches=[/rör|verktyg|jour|vvs/,/porträtt|max|foto|ansikte/,/aik|gnag|solna/,/bajen|hammarby|söder/,/gårdar|djurgård|dif/,/pappa|farsan|fars dag/,/mamma|mors dag/];let idx=matches.findIndex(re=>re.test(words));if(idx<0){feedback.textContent='Ingen matchning i demokollektionen. Prova exempelvis AIK, Hammarby, Djurgården, porträtt eller rörmokare.';return}setPreset(idx);render()};panel.append(suggest,feedback);hint('Demon väljer ett färdigt illustrationsförslag ur kollektionen. Beskrivningen följer med i ditt korrektur.')}
  edit('Namn på din dosa','title',30);edit('Din hälsning','line',65);
  let pal=el('div',null,'palette');pal.append(el('span','Tryckfärg'));for(const [name,hex] of [['Original',labels[presets[s.preset][0]].ink],...colors]){
  const btn=el('button');btn.style.setProperty('--swatch',hex);btn.title=name;btn.setAttribute('aria-label',name);const val=name==='Original'?'':hex;
@@ -187,13 +191,21 @@ function useDesign(id){
 }
 $('sourceToggle').onclick=()=>{sourceShown=!sourceShown;preview()};
 $('useRor').onclick=()=>useDesign('ror');
-const captions=['AIK · Svart och guld','Hammarby · Grönt och vitt','Djurgården · Blå ränder'];
-presets.slice(2).forEach((p,i)=>{
- const b=el('button',null,'card'),img=el('img');
- img.alt=p[1]+' med illustrerat supporterlock';img.loading='lazy';img.src='assets/'+p[0]+'-tin.webp';
- b.append(img,el('strong',p[1]),el('small',captions[i]));
- b.setAttribute('aria-label','Använd '+p[1]);b.onclick=()=>useDesign(p[0]);$('cards').append(b)
-});
+function addExample(container,id,description){
+ const preset=presets.find(item=>item[0]===id);
+ const button=el('button',null,'card'),image=el('img');
+ image.alt='';image.loading='lazy';image.src='assets/'+id+'-tin.webp';
+ button.append(image,el('strong',preset[1]),el('small',description));
+ button.setAttribute('aria-label','Välj '+preset[1]+' i studion');
+ button.onclick=()=>useDesign(id);
+ $(container).append(button);
+}
+for(const [id,description] of [['ror','Yrkesmotiv · Till kollegan'],['max','Porträtt · Från foto till lock'],['pappa','Fars dag · Skriv din hälsning'],['mamma','Mors dag · Skriv din hälsning']]){
+ addExample('personalCards',id,description);
+}
+for(const [id,description] of [['gnaget','AIK · Svart och guld'],['bajen','Hammarby · Grönt och vitt'],['gardar','Djurgården · Blå ränder']]){
+ addExample('cards',id,description);
+}
 let showBox=true;
 $('giftView').onclick=()=>{showBox=!showBox;$('giftPhoto').src=showBox?'assets/hero.webp':'assets/stock.webp';$('giftPhoto').alt=showBox?'Öppen presentkartong med illustrerade prillor':'Stock med personligt pappersomslag';$('giftView').textContent=showBox?'Visa standardomslag':'Visa presentkartong'};
 render();
